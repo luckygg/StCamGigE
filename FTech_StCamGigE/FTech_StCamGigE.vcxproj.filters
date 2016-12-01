@@ -42,7 +42,7 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StCamera.h">
+    <ClInclude Include="StCamGigE.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,7 +56,7 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StCamera.cpp">
+    <ClCompile Include="StCamGigE.cpp">
       <Filter>include</Filter>
     </ClCompile>
   </ItemGroup>

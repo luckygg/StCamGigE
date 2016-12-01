@@ -187,14 +187,14 @@
     <ClInclude Include="FTech_StCamGigE.h" />
     <ClInclude Include="FTech_StCamGigEDlg.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="StCamera.h" />
+    <ClInclude Include="StCamGigE.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FTech_StCamGigE.cpp" />
     <ClCompile Include="FTech_StCamGigEDlg.cpp" />
-    <ClCompile Include="StCamera.cpp" />
+    <ClCompile Include="StCamGigE.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

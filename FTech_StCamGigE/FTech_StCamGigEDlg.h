@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "StCamera.h"
+#include "StCamGigE.h"
 
 // CFTech_StCamGigEDlg dialog
 class CFTech_StCamGigEDlg : public CDialogEx

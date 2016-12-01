@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "StCamera.h"
+#include "StCamGigE.h"
 
 
 CStCamera::CStCamera(void)
