@@ -5,7 +5,7 @@
 //----------------------------------------------------------
 // Programmed by William Kim
 //----------------------------------------------------------
-// Last Update : 2016-11-10 16:37
+// Last Update : 2017-01-06 11:39
 // Modified by William Kim
 //----------------------------------------------------------
 
@@ -31,16 +31,52 @@ enum TRGSRC {SRC_SW=0, SRC_HW};
 enum TRGOVL {OVL_Off=0, OVL_ReadOut, OVL_PreFrm};
 enum EXPMODE {EXP_Timed=0, EXP_PWC};
 
-class CStCamera
+typedef struct StCameraInfo
+{
+	CStringArray ModelName;
+	CStringArray SN;
+	CStringArray IP;
+	CStringArray MAC;
+
+	void Clear() {
+		ModelName.RemoveAll();
+		SN.RemoveAll();
+		IP.RemoveAll();
+		MAC.RemoveAll();
+	}
+}StCameraInfo;
+
+extern StCameraInfo g_stCamInfo;
+class CStCamGigE
 {
 public:
-	CStCamera(void);
-	~CStCamera(void);
+	CStCamGigE(void);
+	~CStCamGigE(void);
+
+	static bool SearchAndGetDeviceCount(int &nValue);
+
+	static CString GetDeviceModelName(int idx) { 
+		if (idx >= g_stCamInfo.ModelName.GetCount()) 
+			return _T("Out of index.");
+		return g_stCamInfo.ModelName.GetAt(idx); }
+	static CString GetDeviceSN(int idx) { 
+		if (idx >= g_stCamInfo.ModelName.GetCount()) 
+			return _T("Out of index.");
+		return g_stCamInfo.SN.GetAt(idx); }
+	static CString GetDeviceIP(int idx) { 
+		if (idx >= g_stCamInfo.ModelName.GetCount()) 
+			return _T("Out of index.");
+		return g_stCamInfo.IP.GetAt(idx); }
+	static CString GetDeviceMAC(int idx) { 
+		if (idx >= g_stCamInfo.ModelName.GetCount()) 
+			return _T("Out of index.");
+		return g_stCamInfo.MAC.GetAt(idx); }
 
 	//----- 연결 및 해제 -----//
 	bool OnConnect(); // Dialog 선택 연결.
-	bool OnConnect(CString strUserID); // User ID로 연결.
-	bool OnConnect(int nAddr1, int nAddr2, int nAddr3, int nAddr4); // IP Address로 연결.
+	bool OnConnectID(CString strUserID); // User ID로 연결.
+	bool OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4); // IP Address로 연결.
+	bool OnConnectIP(CString strIPAddress);
 	void OnDisconnect(); // 연결 해제.
 
 	//----- 영상 취득 제어 -----//

@@ -1,8 +1,46 @@
 #include "StdAfx.h"
 #include "StCamGigE.h"
 
+StCameraInfo g_stCamInfo;
+bool CStCamGigE::SearchAndGetDeviceCount(int &nValue)
+{
+	g_stCamInfo.Clear();
 
-CStCamera::CStCamera(void)
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+	int nDeviceCount=0;
+
+	mlSystem.SetDetectionTimeout(500);
+	pvResult = mlSystem.Find();
+	
+	if(pvResult.IsOK() == true)
+	{
+		PvUInt32 lInterfaceCount = mlSystem.GetInterfaceCount();
+
+		for( PvUInt32 x = 0; x < lInterfaceCount; x++ )
+		{
+			// get pointer to each of interface
+			PvInterface * lInterface = mlSystem.GetInterface( x );
+
+			// Get the number of GEV devices that were found using GetDeviceCount.
+			PvUInt32 lDeviceCount = lInterface->GetDeviceCount();
+
+			for( PvUInt32 y = 0; y < lDeviceCount ; y++ )
+			{
+				lDeviceInfo = lInterface->GetDeviceInfo( y );
+				g_stCamInfo.IP.Add(lDeviceInfo->GetIPAddress().GetUnicode());
+				g_stCamInfo.MAC.Add(lDeviceInfo->GetMACAddress().GetUnicode());
+				g_stCamInfo.ModelName.Add(lDeviceInfo->GetModel().GetUnicode());
+				g_stCamInfo.SN.Add(lDeviceInfo->GetSerialNumber().GetUnicode());
+			}
+		}
+	}
+
+	return true;
+}
+
+CStCamGigE::CStCamGigE(void)
 	: m_pvPipeline(&m_pvStream)
 	, m_ppvAcqManager(NULL)
 {
@@ -22,8 +60,7 @@ CStCamera::CStCamera(void)
 	m_hThTerminate = CreateEvent(NULL,TRUE,FALSE,NULL);
 }
 
-
-CStCamera::~CStCamera(void)
+CStCamGigE::~CStCamGigE(void)
 {
 	if (m_isAcquisition == true)
 	{
@@ -48,7 +85,7 @@ CStCamera::~CStCamera(void)
 	OnDisconnect();
 }
 
-bool CStCamera::OnConnect()
+bool CStCamGigE::OnConnect()
 {
 	PvResult StResult = PvResult::Code::NOT_CONNECTED;
 
@@ -138,7 +175,7 @@ bool CStCamera::OnConnect()
 	return true;
 }
 
-bool CStCamera::OnConnect(CString strUserID)
+bool CStCamGigE::OnConnectID(CString strUserID)
 {
 	PvDeviceInfo* ppvDeviceInfo = NULL;
 	PvResult StResult = PvResult::Code::NOT_CONNECTED;
@@ -146,7 +183,7 @@ bool CStCamera::OnConnect(CString strUserID)
 
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	m_pvSystem.SetDetectionTimeout( 1000 );
+	m_pvSystem.SetDetectionTimeout( 500 );
 	StResult = m_pvSystem.Find();
 	if( StResult.IsOK() )
 	{
@@ -178,8 +215,9 @@ bool CStCamera::OnConnect(CString strUserID)
 	}
 
 	if (Break == false) return false;
+	PvString strID(strUserID);
 
-	StResult = m_pvDevice.Connect( ppvDeviceInfo, PvAccessControl );
+	StResult = m_pvDevice.Connect(strID, PvAccessControl);
 	if(!StResult.IsOK())
 	{
 		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
@@ -248,7 +286,7 @@ bool CStCamera::OnConnect(CString strUserID)
 	return true;
 }
 
-bool CStCamera::OnConnect(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
+bool CStCamGigE::OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 {
 	PvDeviceInfo* ppvDeviceInfo = NULL;
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
@@ -259,7 +297,7 @@ bool CStCamera::OnConnect(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 	PvResult StResult = PvResult::Code::NOT_CONNECTED;
 	bool Break = FALSE;
 
-	m_pvSystem.SetDetectionTimeout( 1000 );
+	m_pvSystem.SetDetectionTimeout( 500 );
 	StResult = m_pvSystem.Find();
 	if( StResult.IsOK() )
 	{
@@ -293,7 +331,9 @@ bool CStCamera::OnConnect(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 
 	if (Break == false) return false;
 
-	StResult = m_pvDevice.Connect( ppvDeviceInfo, PvAccessControl );
+	PvString strIP(IP);
+	
+	StResult = m_pvDevice.Connect( strIP, PvAccessControl );
 	if(!StResult.IsOK())
 	{
 		ShowErrorMessage("Connect() - PvDevice::Connect()", StResult.GetCode());
@@ -362,7 +402,119 @@ bool CStCamera::OnConnect(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 	return true;
 }
 
-void CStCamera::OnDisconnect()
+bool CStCamGigE::OnConnectIP(CString strIPAddress)
+{
+	PvDeviceInfo* ppvDeviceInfo = NULL;
+	SetCursor(LoadCursor(NULL, IDC_WAIT));
+
+	PvResult StResult = PvResult::Code::NOT_CONNECTED;
+	bool Break = FALSE;
+
+	m_pvSystem.SetDetectionTimeout( 500 );
+	StResult = m_pvSystem.Find();
+	if( StResult.IsOK() )
+	{
+		PvUInt32 lInterfaceCount = m_pvSystem.GetInterfaceCount();
+
+		for( PvUInt32 x = 0; x < lInterfaceCount; x++)
+		{
+			if(Break) break;
+			PvInterface *pInterface = m_pvSystem.GetInterface(x);
+			PvUInt32 DeviceCount = pInterface->GetDeviceCount();
+			for( PvUInt32 y = 0; y < DeviceCount; y++)
+			{
+				ppvDeviceInfo = pInterface->GetDeviceInfo(y);
+				CString ID=L"";
+
+				ID = ppvDeviceInfo->GetIPAddress().GetUnicode();
+				if(strIPAddress.Compare(ID) == 0) 
+				{
+					Break = TRUE;
+					break;
+				}
+				Break = FALSE;
+			}
+		}
+	}
+	else
+	{
+		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
+		return false;
+	}
+
+	if (Break == false) return false;
+	PvString strIP(strIPAddress);
+	
+	StResult = m_pvDevice.Connect( strIP, PvAccessControl );
+	if(!StResult.IsOK())
+	{
+		ShowErrorMessage("Connect() - PvDevice::Connect()", StResult.GetCode());
+		return false;
+	}
+
+#ifdef _DEBUG
+	m_pvDevice.GetGenParameters()->SetIntegerValue( "GevHeartbeatTimeout", 60000 );
+#endif
+	StResult = m_pvDevice.NegotiatePacketSize( 0, 1476 );
+	if ( !StResult.IsOK() )
+	{
+		::Sleep( 2500 );
+	}
+
+	StResult = m_pvStream.Open( ppvDeviceInfo->GetIPAddress() );
+	if ( !StResult.IsOK() )
+	{
+		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
+		return false;
+	}
+
+	m_pvDevice.SetStreamDestination( m_pvStream.GetLocalIPAddress(), m_pvStream.GetLocalPort() );
+
+	m_pvStream.GetParameters()->SetIntegerValue("RequestTimeout", 1000 );
+
+	ASSERT( m_ppvAcqManager == NULL );
+	m_ppvAcqManager = new PvAcquisitionStateManager( &m_pvDevice, &m_pvStream );
+
+	m_strIP = (CString)ppvDeviceInfo->GetIPAddress().GetUnicode();
+	m_strMAC = (CString)ppvDeviceInfo->GetMACAddress().GetUnicode();
+
+	PvInt64 Value=0;
+	m_pvDevice.GetGenParameters()->GetInteger( "Width" )->GetValue(Value);
+	m_nWidth = (int)Value;
+
+	m_pvDevice.GetGenParameters()->GetInteger( "Height" )->GetValue(Value);
+	m_nHeight = (int)Value;
+
+	PvString Format;
+	m_pvDevice.GetGenParameters()->GetEnumValue("PixelFormat",Format);
+	CString FormatStr = Format.GetUnicode();
+	if (FormatStr.Find(L"Mono",0) >= 0)
+	{
+		m_pvDevice.GetGenParameters()->SetEnumValue("PixelFormat", "Mono8");
+		m_nBpp = 8;
+		OnCreateBmpInfo(m_nWidth, m_nHeight, m_nBpp);
+	}
+	else if (FormatStr.Find(L"Bayer",0) >= 0)
+	{
+		FormatStr = FormatStr.Left(7);
+		FormatStr += L"8";
+
+		Format = (PvString)FormatStr;
+		m_pvDevice.GetGenParameters()->SetEnumValue("PixelFormat", Format);
+		m_nBpp = 24;
+		OnCreateBmpInfo(m_nWidth, m_nHeight, m_nBpp);
+	}
+
+	m_pvDevice.GetGenParameters()->GetInteger( "PayloadSize" )->GetValue(Value);
+	m_pbyBuffer = new BYTE[(int)Value*m_nBpp/8];
+	memset(m_pbyBuffer, 0, (int)Value*m_nBpp/8);
+
+	SetCursor(NULL);
+
+	return true;
+}
+
+void CStCamGigE::OnDisconnect()
 {
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
 
@@ -402,7 +554,7 @@ void CStCamera::OnDisconnect()
 	SetCursor(NULL);
 }
 
-bool CStCamera::OnStartAcquisition()
+bool CStCamGigE::OnStartAcquisition()
 {
 	if (!m_pvDevice.IsConnected())
 	{
@@ -462,7 +614,7 @@ bool CStCamera::OnStartAcquisition()
 	return true;
 }
 
-bool CStCamera::OnStopAcquisition()
+bool CStCamGigE::OnStopAcquisition()
 {
 	if (!m_pvDevice.IsConnected())
 	{
@@ -495,7 +647,7 @@ bool CStCamera::OnStopAcquisition()
 	return true;
 }
 
-void CStCamera::ShowErrorMessage(char* pcMessage, PvUInt32 nError)
+void CStCamGigE::ShowErrorMessage(char* pcMessage, PvUInt32 nError)
 {
 	int Len = (int)strlen(pcMessage);
 	char* Tmp = new char[128];
@@ -539,7 +691,7 @@ void CStCamera::ShowErrorMessage(char* pcMessage, PvUInt32 nError)
 }
 
 
-void CStCamera::OnCreateBmpInfo(int nWidth, int nHeight, int nBpp)
+void CStCamGigE::OnCreateBmpInfo(int nWidth, int nHeight, int nBpp)
 {
 	if (nBpp == 8)
 		m_pBitmapInfo = (BITMAPINFO *) new BYTE[sizeof(BITMAPINFO) + 255*sizeof(RGBQUAD)];
@@ -576,7 +728,7 @@ void CStCamera::OnCreateBmpInfo(int nWidth, int nHeight, int nBpp)
 	m_pBitmapInfo->bmiHeader.biHeight = -nHeight;
 }
 
-bool CStCamera::OnSaveImage(CString strPath)
+bool CStCamGigE::OnSaveImage(CString strPath)
 {
 	if (strPath.IsEmpty()) return false;
 
@@ -621,7 +773,7 @@ bool CStCamera::OnSaveImage(CString strPath)
 	return true;
 }
 
-bool CStCamera::GetDeviceUserID(CString &strValue)
+bool CStCamGigE::GetDeviceUserID(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueString("DeviceUserID",value);
@@ -632,7 +784,7 @@ bool CStCamera::GetDeviceUserID(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetDeviceModelName(CString &strValue)
+bool CStCamGigE::GetDeviceModelName(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueString("DeviceModelName",value);
@@ -643,7 +795,7 @@ bool CStCamera::GetDeviceModelName(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetSerialNumber(CString &strValue)
+bool CStCamGigE::GetSerialNumber(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueString("DeviceID",value);
@@ -654,7 +806,7 @@ bool CStCamera::GetSerialNumber(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetOffsetX(int &nValue)
+bool CStCamGigE::GetOffsetX(int &nValue)
 {
 	int value=0;
 	bool ret = GetValueInt("OffsetX",value);
@@ -665,7 +817,7 @@ bool CStCamera::GetOffsetX(int &nValue)
 	return true;
 }
 
-bool CStCamera::GetOffsetY(int &nValue)
+bool CStCamGigE::GetOffsetY(int &nValue)
 {
 	int value=0;
 	bool ret = GetValueInt("OffsetY",value);
@@ -676,7 +828,7 @@ bool CStCamera::GetOffsetY(int &nValue)
 	return true;
 }
 
-bool CStCamera::GetAcquisitionMode(CString &strValue)
+bool CStCamGigE::GetAcquisitionMode(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("AcquisitionMode",value);
@@ -687,7 +839,7 @@ bool CStCamera::GetAcquisitionMode(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetAcquisitionFrameRate(double &dValue)
+bool CStCamGigE::GetAcquisitionFrameRate(double &dValue)
 {
 	double value=0;
 	bool ret = GetValueDouble("AcquisitionFrameRate",value);
@@ -698,7 +850,7 @@ bool CStCamera::GetAcquisitionFrameRate(double &dValue)
 	return true;
 }
 
-bool CStCamera::GetTriggerMode(CString &strValue)
+bool CStCamGigE::GetTriggerMode(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("TriggerMode",value);
@@ -709,7 +861,7 @@ bool CStCamera::GetTriggerMode(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetTriggerSource(CString &strValue)
+bool CStCamGigE::GetTriggerSource(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("TriggerSource",value);
@@ -720,7 +872,7 @@ bool CStCamera::GetTriggerSource(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetTriggerOverlap(CString &strValue)
+bool CStCamGigE::GetTriggerOverlap(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("TriggerOverlap",value);
@@ -731,7 +883,7 @@ bool CStCamera::GetTriggerOverlap(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetExposureMode(CString &strValue)
+bool CStCamGigE::GetExposureMode(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("ExposureMode",value);
@@ -742,7 +894,7 @@ bool CStCamera::GetExposureMode(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetExposureTimeRaw(int &nValue)
+bool CStCamGigE::GetExposureTimeRaw(int &nValue)
 {
 	int value=0;
 	bool ret = GetValueInt("ExposureTimeRaw",value);
@@ -753,7 +905,7 @@ bool CStCamera::GetExposureTimeRaw(int &nValue)
 	return true;
 }
 
-bool CStCamera::GetPixelFormat(CString &strValue)
+bool CStCamGigE::GetPixelFormat(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("PixelFormat",value);
@@ -764,7 +916,7 @@ bool CStCamera::GetPixelFormat(CString &strValue)
 	return true;
 }
 
-bool CStCamera::GetUserSetDefaultSelector(CString &strValue)
+bool CStCamGigE::GetUserSetDefaultSelector(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueEnum("UserSetDefaultSelector",value);
@@ -775,7 +927,7 @@ bool CStCamera::GetUserSetDefaultSelector(CString &strValue)
 	return true;
 }
 
-bool CStCamera::SetDeviceUserID(CString strValue)
+bool CStCamGigE::SetDeviceUserID(CString strValue)
 {
 	CString value=_T("");
 	bool ret = SetValueString("DeviceUserID",strValue);
@@ -784,7 +936,7 @@ bool CStCamera::SetDeviceUserID(CString strValue)
 	return true;
 }
 
-bool CStCamera::SetOffsetX(int nValue)
+bool CStCamGigE::SetOffsetX(int nValue)
 {
 	int value=0;
 	bool ret = SetValueInt("OffsetX",value);
@@ -795,7 +947,7 @@ bool CStCamera::SetOffsetX(int nValue)
 	return true;
 }
 
-bool CStCamera::SetOffsetY(int nValue)
+bool CStCamGigE::SetOffsetY(int nValue)
 {
 	bool ret = SetValueInt("OffsetY",nValue);
 	if (ret == false) return false;
@@ -803,7 +955,7 @@ bool CStCamera::SetOffsetY(int nValue)
 	return true;
 }
 
-bool CStCamera::SetAcquisitionFrameRate(double dValue)
+bool CStCamGigE::SetAcquisitionFrameRate(double dValue)
 {
 	bool ret = SetValueDouble("AcquisitionFrameRate",dValue);
 	if (ret == false) return false;
@@ -811,7 +963,7 @@ bool CStCamera::SetAcquisitionFrameRate(double dValue)
 	return true;
 }
 
-bool CStCamera::SetAcquisitionMode(CString strValue)
+bool CStCamGigE::SetAcquisitionMode(CString strValue)
 {
 	bool ret = SetValueEnum("AcquisitionMode",strValue);
 	if (ret == false) return false;
@@ -819,7 +971,7 @@ bool CStCamera::SetAcquisitionMode(CString strValue)
 	return true;
 }
 
-bool CStCamera::SetTriggerMode(TRGMODE Mode)
+bool CStCamGigE::SetTriggerMode(TRGMODE Mode)
 {
 	CString value=_T("");
 	switch (Mode)
@@ -834,7 +986,7 @@ bool CStCamera::SetTriggerMode(TRGMODE Mode)
 	return true;
 }
 
-bool CStCamera::SetTriggerSource(TRGSRC Src)
+bool CStCamGigE::SetTriggerSource(TRGSRC Src)
 {
 	CString value=_T("");
 	switch (Src)
@@ -849,7 +1001,7 @@ bool CStCamera::SetTriggerSource(TRGSRC Src)
 	return true;
 }
 
-bool CStCamera::SetTriggerOverlap(TRGOVL Ovl)
+bool CStCamGigE::SetTriggerOverlap(TRGOVL Ovl)
 {
 	CString value=_T("");
 	switch (Ovl)
@@ -865,7 +1017,7 @@ bool CStCamera::SetTriggerOverlap(TRGOVL Ovl)
 	return true;
 }
 
-bool CStCamera::SetExposureMode(EXPMODE Mode)
+bool CStCamGigE::SetExposureMode(EXPMODE Mode)
 {
 	CString value=_T("");
 	switch (Mode)
@@ -880,7 +1032,7 @@ bool CStCamera::SetExposureMode(EXPMODE Mode)
 	return true;
 }
 
-bool CStCamera::SetUserSetSelector(USER User)
+bool CStCamGigE::SetUserSetSelector(USER User)
 {
 	CString value=_T("");
 	switch (User)
@@ -895,7 +1047,7 @@ bool CStCamera::SetUserSetSelector(USER User)
 	return true;
 }
 
-bool CStCamera::SetExposureTime(double dValue)
+bool CStCamGigE::SetExposureTime(double dValue)
 {
 	bool ret = SetValueDouble("ExposureTime",dValue);
 	if (ret == false) return false;
@@ -903,7 +1055,7 @@ bool CStCamera::SetExposureTime(double dValue)
 	return true;
 }
 
-bool CStCamera::SetContinuousMode()
+bool CStCamGigE::SetContinuousMode()
 {
 	bool ret=false;
 
@@ -916,7 +1068,7 @@ bool CStCamera::SetContinuousMode()
 	return true;
 }
 
-bool CStCamera::SetSoftTriggerMode()
+bool CStCamGigE::SetSoftTriggerMode()
 {
 	bool ret=false;
 
@@ -935,7 +1087,7 @@ bool CStCamera::SetSoftTriggerMode()
 	return true;
 }
 
-bool CStCamera::SetHardTriggerMode()
+bool CStCamGigE::SetHardTriggerMode()
 {
 	bool ret=false;
 
@@ -951,7 +1103,7 @@ bool CStCamera::SetHardTriggerMode()
 	return true;
 }
 
-bool CStCamera::OnTriggerEvent()
+bool CStCamGigE::OnTriggerEvent()
 {
 	bool ret=false;
 
@@ -961,7 +1113,7 @@ bool CStCamera::OnTriggerEvent()
 	return true;
 }
 
-bool CStCamera::OnUserSetLoad()
+bool CStCamGigE::OnUserSetLoad()
 {
 	bool ret=false;
 
@@ -971,7 +1123,7 @@ bool CStCamera::OnUserSetLoad()
 	return true;
 }
 
-bool CStCamera::OnAutoWhiteBalance(AWB Type)
+bool CStCamGigE::OnAutoWhiteBalance(AWB Type)
 {
 	bool ret=false;
 
@@ -1002,7 +1154,7 @@ bool CStCamera::OnAutoWhiteBalance(AWB Type)
 
 	return true;
 }
-bool CStCamera::OnSaveAWBValueOnceToPreset(int nPresetNum)
+bool CStCamGigE::OnSaveAWBValueOnceToPreset(int nPresetNum)
 {
 	if (!m_pvDevice.IsConnected())
 	{
@@ -1055,7 +1207,7 @@ bool CStCamera::OnSaveAWBValueOnceToPreset(int nPresetNum)
 	return true;
 }
 
-bool CStCamera::OnUserSetSave()
+bool CStCamGigE::OnUserSetSave()
 {
 	bool ret=false;
 
@@ -1065,9 +1217,9 @@ bool CStCamera::OnUserSetSave()
 	return true;
 }
 
-UINT CStCamera::BufferThread(LPVOID param)
+UINT CStCamGigE::BufferThread(LPVOID param)
 {
-	CStCamera* pThis = reinterpret_cast<CStCamera*>(param);
+	CStCamGigE* pThis = reinterpret_cast<CStCamGigE*>(param);
 
 	PvResult StResult;
 
@@ -1129,7 +1281,7 @@ UINT CStCamera::BufferThread(LPVOID param)
 	return 0;
 }
 
-bool CStCamera::GetValueString(char* pNodeName, CString &strValue)
+bool CStCamGigE::GetValueString(char* pNodeName, CString &strValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1152,7 +1304,7 @@ bool CStCamera::GetValueString(char* pNodeName, CString &strValue)
 
 	return true;
 }
-bool CStCamera::SetValueString(char* pNodeName, CString strValue)
+bool CStCamGigE::SetValueString(char* pNodeName, CString strValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1174,7 +1326,7 @@ bool CStCamera::SetValueString(char* pNodeName, CString strValue)
 
 	return true;
 }
-bool CStCamera::GetValueInt(char* pNodeName, int &nValue)
+bool CStCamGigE::GetValueInt(char* pNodeName, int &nValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1197,7 +1349,7 @@ bool CStCamera::GetValueInt(char* pNodeName, int &nValue)
 
 	return true;
 }
-bool CStCamera::SetValueInt(char* pNodeName, int nValue)
+bool CStCamGigE::SetValueInt(char* pNodeName, int nValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1217,7 +1369,7 @@ bool CStCamera::SetValueInt(char* pNodeName, int nValue)
 
 	return true;
 }
-bool CStCamera::GetValueDouble(char* pNodeName, double &dValue)
+bool CStCamGigE::GetValueDouble(char* pNodeName, double &dValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1240,7 +1392,7 @@ bool CStCamera::GetValueDouble(char* pNodeName, double &dValue)
 
 	return true;
 }
-bool CStCamera::SetValueDouble(char* pNodeName, double dValue)
+bool CStCamGigE::SetValueDouble(char* pNodeName, double dValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1260,7 +1412,7 @@ bool CStCamera::SetValueDouble(char* pNodeName, double dValue)
 
 	return true;
 }
-bool CStCamera::GetValueEnum(char* pNodeName, CString &strValue)
+bool CStCamGigE::GetValueEnum(char* pNodeName, CString &strValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1283,7 +1435,7 @@ bool CStCamera::GetValueEnum(char* pNodeName, CString &strValue)
 
 	return true;
 }
-bool CStCamera::SetValueEnum(char* pNodeName, CString strValue)
+bool CStCamGigE::SetValueEnum(char* pNodeName, CString strValue)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{
@@ -1305,7 +1457,7 @@ bool CStCamera::SetValueEnum(char* pNodeName, CString strValue)
 
 	return true;
 }
-bool CStCamera::OnExecuteCommand(char* pNodeName)
+bool CStCamGigE::OnExecuteCommand(char* pNodeName)
 {
 	if (m_pvDevice.IsConnected() == false)
 	{

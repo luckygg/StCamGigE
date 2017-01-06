@@ -120,6 +120,7 @@ void CFTech_StCamGigEDlg::OnBnClickedBtnConnection()
 	if (caption == L"Connect")
 	{
 		if (m_Camera.IsConnected() == true) return;
+
 		bool ret = m_Camera.OnConnect();
 		if (ret == true)
 		{
