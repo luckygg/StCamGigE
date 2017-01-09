@@ -1,7 +1,9 @@
 #include "StdAfx.h"
 #include "StCamGigE.h"
 
-StCameraInfo g_stCamInfo;
+using namespace SENTECH_GIGE;
+
+static StCameraInfo g_stCamInfo;
 bool CStCamGigE::SearchAndGetDeviceCount(int &nValue)
 {
 	g_stCamInfo.Clear();
@@ -28,6 +30,7 @@ bool CStCamGigE::SearchAndGetDeviceCount(int &nValue)
 
 			for( PvUInt32 y = 0; y < lDeviceCount ; y++ )
 			{
+				nDeviceCount++;
 				lDeviceInfo = lInterface->GetDeviceInfo( y );
 				g_stCamInfo.IP.Add(lDeviceInfo->GetIPAddress().GetUnicode());
 				g_stCamInfo.MAC.Add(lDeviceInfo->GetMACAddress().GetUnicode());
@@ -37,7 +40,37 @@ bool CStCamGigE::SearchAndGetDeviceCount(int &nValue)
 		}
 	}
 
+	nValue = nDeviceCount;
+
 	return true;
+}
+
+CString CStCamGigE::GetDeviceModelName(int idx) 
+{ 
+	if (idx >= g_stCamInfo.ModelName.GetCount()) 
+		return _T("Out of index.");
+	return g_stCamInfo.ModelName.GetAt(idx); 
+}
+
+CString CStCamGigE::GetDeviceSN(int idx)
+{ 
+	if (idx >= g_stCamInfo.ModelName.GetCount()) 
+		return _T("Out of index.");
+	return g_stCamInfo.SN.GetAt(idx); 
+}
+
+CString CStCamGigE::GetDeviceIP(int idx)
+{ 
+	if (idx >= g_stCamInfo.ModelName.GetCount()) 
+		return _T("Out of index.");
+	return g_stCamInfo.IP.GetAt(idx);
+}
+
+CString CStCamGigE::GetDeviceMAC(int idx)
+{
+	if (idx >= g_stCamInfo.ModelName.GetCount()) 
+		return _T("Out of index.");
+	return g_stCamInfo.MAC.GetAt(idx);
 }
 
 CStCamGigE::CStCamGigE(void)
@@ -177,44 +210,10 @@ bool CStCamGigE::OnConnect()
 
 bool CStCamGigE::OnConnectID(CString strUserID)
 {
-	PvDeviceInfo* ppvDeviceInfo = NULL;
 	PvResult StResult = PvResult::Code::NOT_CONNECTED;
-	bool Break = FALSE;
 
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	m_pvSystem.SetDetectionTimeout( 500 );
-	StResult = m_pvSystem.Find();
-	if( StResult.IsOK() )
-	{
-		PvUInt32 lInterfaceCount = m_pvSystem.GetInterfaceCount();
-
-		for( PvUInt32 x = 0; x < lInterfaceCount; x++)
-		{
-			if(Break) break;
-			PvInterface *pInterface = m_pvSystem.GetInterface(x);
-			PvUInt32 DeviceCount = pInterface->GetDeviceCount();
-			for( PvUInt32 y = 0; y < DeviceCount; y++)
-			{
-				ppvDeviceInfo = pInterface->GetDeviceInfo(y);
-				CString ID;
-				
-				ID = ppvDeviceInfo->GetUserDefinedName().GetUnicode();
-				if(strUserID.Compare(ID) == 0) 
-				{
-					Break = TRUE;
-					break;
-				}
-				Break = FALSE;
-			}
-		}
-	}
-	else
-	{
-		return false;
-	}
-
-	if (Break == false) return false;
 	PvString strID(strUserID);
 
 	StResult = m_pvDevice.Connect(strID, PvAccessControl);
@@ -233,7 +232,26 @@ bool CStCamGigE::OnConnectID(CString strUserID)
 		::Sleep( 2500 );
 	}
 
-	StResult = m_pvStream.Open( ppvDeviceInfo->GetIPAddress() );
+	CString strIP=_T("");
+	PvString pvstrIP="";
+	PvGenInteger *pIntIP = m_pvDevice.GetGenParameters()->GetInteger("GevCurrentIPAddress");
+	PvInt64 valueIP = 0;
+	pIntIP->GetValue(valueIP);
+
+	unsigned char bytesIP[4];
+	bytesIP[0] = valueIP & 0xFF;
+	bytesIP[1] = (valueIP >> 8) & 0xFF;
+	bytesIP[2] = (valueIP >> 16) & 0xFF;
+	bytesIP[3] = (valueIP >> 24) & 0xFF;   
+	strIP.Format(_T("%d.%d.%d.%d"),bytesIP[3],bytesIP[2],bytesIP[1],bytesIP[0]);
+	pvstrIP = (PvString)strIP;
+
+	PvString strMac="";
+	PvGenInteger *pIntMac = m_pvDevice.GetGenParameters()->GetInteger("GevMACAddress");
+	strMac = pIntMac->ToString();
+	m_strMAC = (CString)strMac.GetUnicode();
+
+	StResult = m_pvStream.Open( pvstrIP );
 	if ( !StResult.IsOK() )
 	{
 		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
@@ -247,8 +265,7 @@ bool CStCamGigE::OnConnectID(CString strUserID)
 	ASSERT( m_ppvAcqManager == NULL );
 	m_ppvAcqManager = new PvAcquisitionStateManager( &m_pvDevice, &m_pvStream );
 	
-	m_strIP = (CString)ppvDeviceInfo->GetIPAddress().GetUnicode();
-	m_strMAC = (CString)ppvDeviceInfo->GetMACAddress().GetUnicode();
+	m_strIP = strIP;
 
 	PvInt64 Value=0;
 	m_pvDevice.GetGenParameters()->GetInteger( "Width" )->GetValue(Value);
@@ -288,48 +305,13 @@ bool CStCamGigE::OnConnectID(CString strUserID)
 
 bool CStCamGigE::OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 {
-	PvDeviceInfo* ppvDeviceInfo = NULL;
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	CString IP;
+	CString IP=_T("");
 	IP.Format(L"%d.%d.%d.%d", nAddr1,nAddr2,nAddr3,nAddr4);
 
 	PvResult StResult = PvResult::Code::NOT_CONNECTED;
-	bool Break = FALSE;
-
-	m_pvSystem.SetDetectionTimeout( 500 );
-	StResult = m_pvSystem.Find();
-	if( StResult.IsOK() )
-	{
-		PvUInt32 lInterfaceCount = m_pvSystem.GetInterfaceCount();
-
-		for( PvUInt32 x = 0; x < lInterfaceCount; x++)
-		{
-			if(Break) break;
-			PvInterface *pInterface = m_pvSystem.GetInterface(x);
-			PvUInt32 DeviceCount = pInterface->GetDeviceCount();
-			for( PvUInt32 y = 0; y < DeviceCount; y++)
-			{
-				ppvDeviceInfo = pInterface->GetDeviceInfo(y);
-				CString ID=L"";
-
-				ID = ppvDeviceInfo->GetIPAddress().GetUnicode();
-				if(IP.Compare(ID) == 0) 
-				{
-					Break = TRUE;
-					break;
-				}
-				Break = FALSE;
-			}
-		}
-	}
-	else
-	{
-		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
-		return false;
-	}
-
-	if (Break == false) return false;
+	
 
 	PvString strIP(IP);
 	
@@ -349,7 +331,7 @@ bool CStCamGigE::OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 		::Sleep( 2500 );
 	}
 
-	StResult = m_pvStream.Open( ppvDeviceInfo->GetIPAddress() );
+	StResult = m_pvStream.Open( strIP );
 	if ( !StResult.IsOK() )
 	{
 		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
@@ -363,8 +345,11 @@ bool CStCamGigE::OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 	ASSERT( m_ppvAcqManager == NULL );
 	m_ppvAcqManager = new PvAcquisitionStateManager( &m_pvDevice, &m_pvStream );
 
-	m_strIP = (CString)ppvDeviceInfo->GetIPAddress().GetUnicode();
-	m_strMAC = (CString)ppvDeviceInfo->GetMACAddress().GetUnicode();
+	PvString strMac="";
+	PvGenInteger *pIntMac = m_pvDevice.GetGenParameters()->GetInteger("GevMACAddress");
+	strMac = pIntMac->ToString();
+	m_strMAC = (CString)strMac.GetUnicode();
+	m_strIP = IP;
 
 	PvInt64 Value=0;
 	m_pvDevice.GetGenParameters()->GetInteger( "Width" )->GetValue(Value);
@@ -404,45 +389,10 @@ bool CStCamGigE::OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 
 bool CStCamGigE::OnConnectIP(CString strIPAddress)
 {
-	PvDeviceInfo* ppvDeviceInfo = NULL;
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	PvResult StResult = PvResult::Code::NOT_CONNECTED;
-	bool Break = FALSE;
-
-	m_pvSystem.SetDetectionTimeout( 500 );
-	StResult = m_pvSystem.Find();
-	if( StResult.IsOK() )
-	{
-		PvUInt32 lInterfaceCount = m_pvSystem.GetInterfaceCount();
-
-		for( PvUInt32 x = 0; x < lInterfaceCount; x++)
-		{
-			if(Break) break;
-			PvInterface *pInterface = m_pvSystem.GetInterface(x);
-			PvUInt32 DeviceCount = pInterface->GetDeviceCount();
-			for( PvUInt32 y = 0; y < DeviceCount; y++)
-			{
-				ppvDeviceInfo = pInterface->GetDeviceInfo(y);
-				CString ID=L"";
-
-				ID = ppvDeviceInfo->GetIPAddress().GetUnicode();
-				if(strIPAddress.Compare(ID) == 0) 
-				{
-					Break = TRUE;
-					break;
-				}
-				Break = FALSE;
-			}
-		}
-	}
-	else
-	{
-		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
-		return false;
-	}
-
-	if (Break == false) return false;
+	
 	PvString strIP(strIPAddress);
 	
 	StResult = m_pvDevice.Connect( strIP, PvAccessControl );
@@ -461,7 +411,7 @@ bool CStCamGigE::OnConnectIP(CString strIPAddress)
 		::Sleep( 2500 );
 	}
 
-	StResult = m_pvStream.Open( ppvDeviceInfo->GetIPAddress() );
+	StResult = m_pvStream.Open( strIP );
 	if ( !StResult.IsOK() )
 	{
 		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
@@ -475,9 +425,12 @@ bool CStCamGigE::OnConnectIP(CString strIPAddress)
 	ASSERT( m_ppvAcqManager == NULL );
 	m_ppvAcqManager = new PvAcquisitionStateManager( &m_pvDevice, &m_pvStream );
 
-	m_strIP = (CString)ppvDeviceInfo->GetIPAddress().GetUnicode();
-	m_strMAC = (CString)ppvDeviceInfo->GetMACAddress().GetUnicode();
-
+	PvString strMac="";
+	PvGenInteger *pIntMac = m_pvDevice.GetGenParameters()->GetInteger("GevMACAddress");
+	strMac = pIntMac->ToString();
+	m_strMAC = (CString)strMac.GetUnicode();
+	m_strIP = strIPAddress;
+	
 	PvInt64 Value=0;
 	m_pvDevice.GetGenParameters()->GetInteger( "Width" )->GetValue(Value);
 	m_nWidth = (int)Value;

@@ -19,7 +19,7 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 	
 public :
-	CStCamGigE m_Camera;
+	SENTECH_GIGE::CStCamGigE m_Camera;
 	CWinThread* m_pThDsp;
 	bool m_bThDspWork;
 	int m_nWidth;

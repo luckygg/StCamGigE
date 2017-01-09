@@ -5,7 +5,7 @@
 //----------------------------------------------------------
 // Programmed by William Kim
 //----------------------------------------------------------
-// Last Update : 2017-01-06 11:39
+// Last Update : 2017-01-09 14:00
 // Modified by William Kim
 //----------------------------------------------------------
 
@@ -22,6 +22,8 @@
 #include <PvDeviceInfo.h>
 #include <PvDevice.h>
 #include <PvAcquisitionStateManager.h>
+
+namespace SENTECH_GIGE {
 
 //----- enum type -----//
 enum AWB {AWB_Off=0, AWB_Preset1, AWB_Preset2, AWB_Preset3, AWB_Continuous, AWB_Once};
@@ -46,31 +48,17 @@ typedef struct StCameraInfo
 	}
 }StCameraInfo;
 
-extern StCameraInfo g_stCamInfo;
 class CStCamGigE
 {
 public:
 	CStCamGigE(void);
 	~CStCamGigE(void);
-
+	
 	static bool SearchAndGetDeviceCount(int &nValue);
-
-	static CString GetDeviceModelName(int idx) { 
-		if (idx >= g_stCamInfo.ModelName.GetCount()) 
-			return _T("Out of index.");
-		return g_stCamInfo.ModelName.GetAt(idx); }
-	static CString GetDeviceSN(int idx) { 
-		if (idx >= g_stCamInfo.ModelName.GetCount()) 
-			return _T("Out of index.");
-		return g_stCamInfo.SN.GetAt(idx); }
-	static CString GetDeviceIP(int idx) { 
-		if (idx >= g_stCamInfo.ModelName.GetCount()) 
-			return _T("Out of index.");
-		return g_stCamInfo.IP.GetAt(idx); }
-	static CString GetDeviceMAC(int idx) { 
-		if (idx >= g_stCamInfo.ModelName.GetCount()) 
-			return _T("Out of index.");
-		return g_stCamInfo.MAC.GetAt(idx); }
+	static CString GetDeviceModelName(int idx);
+	static CString GetDeviceSN(int idx);
+	static CString GetDeviceIP(int idx);
+	static CString GetDeviceMAC(int idx);
 
 	//----- 연결 및 해제 -----//
 	bool OnConnect(); // Dialog 선택 연결.
@@ -182,3 +170,4 @@ private :
 	bool OnExecuteCommand(char* pNodeName);
 };
 
+}
