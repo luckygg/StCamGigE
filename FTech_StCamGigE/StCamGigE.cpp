@@ -9,7 +9,6 @@ bool CStCamGigE::GetNumberOfInterfaces(int &nValue)
 	PvUInt32 lInterfaceCount=0;
 	PvSystem mlSystem;
 	PvResult pvResult;
-	PvDeviceInfo *lDeviceInfo = NULL;
 
 	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
 	pvResult = mlSystem.Find();
@@ -21,12 +20,50 @@ bool CStCamGigE::GetNumberOfInterfaces(int &nValue)
 
 	return true;
 }
+
+bool CStCamGigE::GetInterfaceIPAddress(int nIfIdx, CString &strValue)
+{
+	PvUInt32 lDeviceCount=0;
+	PvSystem mlSystem;
+	PvResult pvResult;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	strValue = lInterface->GetIPAddress().GetUnicode();
+
+	return true;
+}
+
+bool CStCamGigE::GetInterfaceSubnetMask(int nIfIdx, CString &strValue)
+{
+	PvUInt32 lDeviceCount=0;
+	PvSystem mlSystem;
+	PvResult pvResult;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	strValue = lInterface->GetSubnetMask().GetUnicode();
+
+	return true;
+}
+
 bool CStCamGigE::GetNumberOfDevices(int nIfIdx, int &nValue)
 {
 	PvUInt32 lDeviceCount=0;
 	PvSystem mlSystem;
 	PvResult pvResult;
-	PvDeviceInfo *lDeviceInfo = NULL;
 
 	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
 	pvResult = mlSystem.Find();
@@ -131,7 +168,7 @@ bool CStCamGigE::GetDeviceMACAddress(int nIfIdx, int nDvIdx, CString &strValue)
 	return true;
 }
 
-bool CStCamGigE::GetAccessStatus(int nIfIdx, int nDvIdx, CString &strValue)
+bool CStCamGigE::GetDeviceAccessStatus(int nIfIdx, int nDvIdx, CString &strValue)
 {
 	PvSystem mlSystem;
 	PvResult pvResult;
@@ -171,7 +208,7 @@ bool CStCamGigE::GetAccessStatus(int nIfIdx, int nDvIdx, CString &strValue)
 	return true;
 }
 
-bool CStCamGigE::GetIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid)
+bool CStCamGigE::GetDeviceIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid)
 {
 	PvSystem mlSystem;
 	PvResult pvResult;
@@ -189,6 +226,31 @@ bool CStCamGigE::GetIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid)
 	if (lDeviceInfo == NULL) return false;
 
 	bValid = lDeviceInfo->IsIPConfigurationValid();
+
+	return true;
+}
+
+bool CStCamGigE::SetDeviceIPAddress(int nIfIdx, int nDvIdx, CString strValue)
+{
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	PvString strIP = strValue;
+	PvDevice lDevice; 
+	pvResult = lDevice.SetIPConfiguration(lDeviceInfo->GetMACAddress(), strIP, lInterface->GetSubnetMask(), lInterface->GetDefaultGateway());
+	if (pvResult.IsOK() == false) return false;
 
 	return true;
 }
@@ -439,7 +501,7 @@ bool CStCamGigE::OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4)
 	StResult = m_pvDevice.Connect( strIP, PvAccessControl );
 	if(!StResult.IsOK())
 	{
-		ShowErrorMessage("Connect() - PvDevice::Connect()", StResult.GetCode());
+		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
 		return false;
 	}
 
@@ -519,7 +581,7 @@ bool CStCamGigE::OnConnectIP(CString strIPAddress)
 	StResult = m_pvDevice.Connect( strIP, PvAccessControl );
 	if(!StResult.IsOK())
 	{
-		ShowErrorMessage("Connect() - PvDevice::Connect()", StResult.GetCode());
+		m_strErrorMsg = (CString)StResult.GetCodeString().GetUnicode();
 		return false;
 	}
 

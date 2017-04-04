@@ -117,6 +117,7 @@ void CFTech_StCamGigEDlg::OnBnClickedBtnConnection()
 	CString caption=L"";
 	GetDlgItemText(IDC_BTN_CONNECTION,caption);
 
+	CStCamGigE::SetDeviceIPAddress(2,0,_T("192.100.101.11"));
 	if (caption == L"Connect")
 	{
 		if (m_Camera.IsConnected() == true) return;

@@ -5,7 +5,7 @@
 //----------------------------------------------------------
 // Programmed by William Kim
 //----------------------------------------------------------
-// Last Update : 2017-04-04 16:21
+// Last Update : 2017-04-04 17:03
 // Modified by William Kim
 //----------------------------------------------------------
 
@@ -34,36 +34,26 @@ enum TRGSRC {SRC_SW=0, SRC_HW};
 enum TRGOVL {OVL_Off=0, OVL_ReadOut, OVL_PreFrm};
 enum EXPMODE {EXP_Timed=0, EXP_PWC};
 
-typedef struct StCameraInfo
-{
-	CStringArray ModelName;
-	CStringArray SN;
-	CStringArray IP;
-	CStringArray MAC;
-
-	void Clear() {
-		ModelName.RemoveAll();
-		SN.RemoveAll();
-		IP.RemoveAll();
-		MAC.RemoveAll();
-	}
-}StCameraInfo;
-
 class CStCamGigE
 {
 public:
 	CStCamGigE(void);
 	~CStCamGigE(void);
 	
+public :
 	static bool GetNumberOfInterfaces(int &nValue);
+	static bool GetInterfaceIPAddress(int nIfIdx, CString &strValue);
+	static bool GetInterfaceSubnetMask(int nIfIdx, CString &strValue);
 	static bool GetNumberOfDevices(int nIfIdx, int &nValue);
 	static bool GetDeviceName(int nIfIdx, int nDvIdx, CString &strValue);
 	static bool GetDeviceSerialNumber(int nIfIdx, int nDvIdx, CString &strValue);
 	static bool GetDeviceIPAddress(int nIfIdx, int nDvIdx, CString &strValue);
 	static bool GetDeviceMACAddress(int nIfIdx, int nDvIdx, CString &strValue);
-	static bool GetAccessStatus(int nIfIdx, int nDvIdx, CString &strValue);
-	static bool GetIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid);
+	static bool GetDeviceAccessStatus(int nIfIdx, int nDvIdx, CString &strValue);
+	static bool GetDeviceIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid);
+	static bool SetDeviceIPAddress(int nIfIdx, int nDvIdx, CString strValue);
 
+public :
 	//----- 연결 및 해제 -----//
 	bool OnConnect(); // Dialog 선택 연결.
 	bool OnConnectID(CString strUserID); // User ID로 연결.
