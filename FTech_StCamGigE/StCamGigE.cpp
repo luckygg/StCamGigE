@@ -3,74 +3,194 @@
 
 using namespace SENTECH_GIGE;
 
-static StCameraInfo g_stCamInfo;
-bool CStCamGigE::SearchAndGetDeviceCount(int &nValue)
-{
-	g_stCamInfo.Clear();
 
+bool CStCamGigE::GetNumberOfInterfaces(int &nValue)
+{
+	PvUInt32 lInterfaceCount=0;
 	PvSystem mlSystem;
 	PvResult pvResult;
 	PvDeviceInfo *lDeviceInfo = NULL;
-	int nDeviceCount=0;
 
-	mlSystem.SetDetectionTimeout(500);
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
 	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
 	
-	if(pvResult.IsOK() == true)
-	{
-		PvUInt32 lInterfaceCount = mlSystem.GetInterfaceCount();
+	lInterfaceCount = mlSystem.GetInterfaceCount();
 
-		for( PvUInt32 x = 0; x < lInterfaceCount; x++ )
-		{
-			// get pointer to each of interface
-			PvInterface * lInterface = mlSystem.GetInterface( x );
+	nValue = lInterfaceCount;
 
-			// Get the number of GEV devices that were found using GetDeviceCount.
-			PvUInt32 lDeviceCount = lInterface->GetDeviceCount();
+	return true;
+}
+bool CStCamGigE::GetNumberOfDevices(int nIfIdx, int &nValue)
+{
+	PvUInt32 lDeviceCount=0;
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
 
-			for( PvUInt32 y = 0; y < lDeviceCount ; y++ )
-			{
-				nDeviceCount++;
-				lDeviceInfo = lInterface->GetDeviceInfo( y );
-				g_stCamInfo.IP.Add(lDeviceInfo->GetIPAddress().GetUnicode());
-				g_stCamInfo.MAC.Add(lDeviceInfo->GetMACAddress().GetUnicode());
-				g_stCamInfo.ModelName.Add(lDeviceInfo->GetModel().GetUnicode());
-				g_stCamInfo.SN.Add(lDeviceInfo->GetSerialNumber().GetUnicode());
-			}
-		}
-	}
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
 
-	nValue = nDeviceCount;
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceCount = lInterface->GetDeviceCount();
+
+	nValue = lDeviceCount;
 
 	return true;
 }
 
-CString CStCamGigE::GetDeviceModelName(int idx) 
+bool CStCamGigE::GetDeviceName(int nIfIdx, int nDvIdx, CString &strValue) 
 { 
-	if (idx >= g_stCamInfo.ModelName.GetCount()) 
-		return _T("Out of index.");
-	return g_stCamInfo.ModelName.GetAt(idx); 
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	strValue = lDeviceInfo->GetModel().GetUnicode();
+
+	return true;
 }
 
-CString CStCamGigE::GetDeviceSN(int idx)
+bool CStCamGigE::GetDeviceSerialNumber(int nIfIdx, int nDvIdx, CString &strValue)
 { 
-	if (idx >= g_stCamInfo.ModelName.GetCount()) 
-		return _T("Out of index.");
-	return g_stCamInfo.SN.GetAt(idx); 
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	strValue = lDeviceInfo->GetSerialNumber().GetUnicode();
+
+	return true;
 }
 
-CString CStCamGigE::GetDeviceIP(int idx)
+bool CStCamGigE::GetDeviceIPAddress(int nIfIdx, int nDvIdx, CString &strValue)
 { 
-	if (idx >= g_stCamInfo.ModelName.GetCount()) 
-		return _T("Out of index.");
-	return g_stCamInfo.IP.GetAt(idx);
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	strValue = lDeviceInfo->GetIPAddress().GetUnicode();
+
+	return true;
 }
 
-CString CStCamGigE::GetDeviceMAC(int idx)
+bool CStCamGigE::GetDeviceMACAddress(int nIfIdx, int nDvIdx, CString &strValue)
 {
-	if (idx >= g_stCamInfo.ModelName.GetCount()) 
-		return _T("Out of index.");
-	return g_stCamInfo.MAC.GetAt(idx);
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	strValue = lDeviceInfo->GetMACAddress().GetUnicode();
+
+	return true;
+}
+
+bool CStCamGigE::GetAccessStatus(int nIfIdx, int nDvIdx, CString &strValue)
+{
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	PvAccessType type = lDeviceInfo->GetAccessStatus();
+	switch (type)
+	{
+	case PvAccessUnknown :
+		strValue = _T("Unknown");
+		break;
+	case PvAccessOpen :
+		strValue = _T("Open");
+		break;
+	case PvAccessControl :
+		strValue = _T("Control");
+		break;
+	case PvAccessReadOnly :
+		strValue = _T("ReadOnly");
+		break;
+	case PvAccessExclusive :
+		strValue = _T("Exclusive");
+		break;
+	}
+		
+	return true;
+}
+
+bool CStCamGigE::GetIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid)
+{
+	PvSystem mlSystem;
+	PvResult pvResult;
+	PvDeviceInfo *lDeviceInfo = NULL;
+
+	mlSystem.SetDetectionTimeout(SEARCH_TIMEOUT);
+	pvResult = mlSystem.Find();
+	if (pvResult.IsOK() == false) return false;
+
+	PvInterface *lInterface = NULL;
+	lInterface = mlSystem.GetInterface(nIfIdx);
+	if (lInterface == NULL) return false;
+
+	lDeviceInfo = lInterface->GetDeviceInfo(nDvIdx);
+	if (lDeviceInfo == NULL) return false;
+
+	bValid = lDeviceInfo->IsIPConfigurationValid();
+
+	return true;
 }
 
 CStCamGigE::CStCamGigE(void)
@@ -82,6 +202,7 @@ CStCamGigE::CStCamGigE(void)
 	
 	m_isAcquisition	= false;
 	m_strErrorMsg	= L"";
+	
 	m_nWidth	= 0;
 	m_nHeight	= 0;
 	m_nBpp		= 0;

@@ -5,6 +5,7 @@
 #pragma once
 #include "StCamGigE.h"
 
+using namespace SENTECH_GIGE;
 // CFTech_StCamGigEDlg dialog
 class CFTech_StCamGigEDlg : public CDialogEx
 {
@@ -19,7 +20,7 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 	
 public :
-	SENTECH_GIGE::CStCamGigE m_Camera;
+	CStCamGigE m_Camera;
 	CWinThread* m_pThDsp;
 	bool m_bThDspWork;
 	int m_nWidth;

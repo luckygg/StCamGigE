@@ -5,7 +5,7 @@
 //----------------------------------------------------------
 // Programmed by William Kim
 //----------------------------------------------------------
-// Last Update : 2017-01-09 14:00
+// Last Update : 2017-04-04 16:21
 // Modified by William Kim
 //----------------------------------------------------------
 
@@ -25,6 +25,7 @@
 
 namespace SENTECH_GIGE {
 
+#define SEARCH_TIMEOUT 100
 //----- enum type -----//
 enum AWB {AWB_Off=0, AWB_Preset1, AWB_Preset2, AWB_Preset3, AWB_Continuous, AWB_Once};
 enum USER {USER_Default=0, USER_UserSet1};
@@ -54,11 +55,14 @@ public:
 	CStCamGigE(void);
 	~CStCamGigE(void);
 	
-	static bool SearchAndGetDeviceCount(int &nValue);
-	static CString GetDeviceModelName(int idx);
-	static CString GetDeviceSN(int idx);
-	static CString GetDeviceIP(int idx);
-	static CString GetDeviceMAC(int idx);
+	static bool GetNumberOfInterfaces(int &nValue);
+	static bool GetNumberOfDevices(int nIfIdx, int &nValue);
+	static bool GetDeviceName(int nIfIdx, int nDvIdx, CString &strValue);
+	static bool GetDeviceSerialNumber(int nIfIdx, int nDvIdx, CString &strValue);
+	static bool GetDeviceIPAddress(int nIfIdx, int nDvIdx, CString &strValue);
+	static bool GetDeviceMACAddress(int nIfIdx, int nDvIdx, CString &strValue);
+	static bool GetAccessStatus(int nIfIdx, int nDvIdx, CString &strValue);
+	static bool GetIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid);
 
 	//----- 연결 및 해제 -----//
 	bool OnConnect(); // Dialog 선택 연결.
@@ -138,7 +142,6 @@ protected:
 private :
 	HANDLE m_hGrabDone;
 	HANDLE m_hThTerminate;
-
 	BYTE*			m_pbyBuffer;
 	BITMAPINFO*		m_pBitmapInfo;
 	PvAcquisitionStateManager *m_ppvAcqManager;
@@ -149,6 +152,7 @@ private :
 
 	CString m_strErrorMsg;
 	bool m_isAcquisition;
+	
 	int	m_nWidth;
 	int	m_nHeight;
 	int	m_nBpp;
