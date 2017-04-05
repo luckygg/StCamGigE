@@ -5,7 +5,7 @@
 //----------------------------------------------------------
 // Programmed by William Kim
 //----------------------------------------------------------
-// Last Update : 2017-04-04 17:03
+// Last Update : 2017-04-05 15:52
 // Modified by William Kim
 //----------------------------------------------------------
 
@@ -33,6 +33,7 @@ enum TRGMODE {TRG_On=0, TRG_Off};
 enum TRGSRC {SRC_SW=0, SRC_HW};
 enum TRGOVL {OVL_Off=0, OVL_ReadOut, OVL_PreFrm};
 enum EXPMODE {EXP_Timed=0, EXP_PWC};
+enum ACQMODE {ACQ_CNT=0, ACQ_SINGLE, ACQ_MULTI};
 
 class CStCamGigE
 {
@@ -41,25 +42,86 @@ public:
 	~CStCamGigE(void);
 	
 public :
+	//******************************************************************************************************************
+	/// \brief					Interface 개수 확인 함수.
+	/// \param [out] nValue		Interface 개수 확인.
+	/// \param bool				결과 반환.
 	static bool GetNumberOfInterfaces(int &nValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Interface의 IP Address 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [out] strvalue	IP Address 확인.
+	/// \param bool				결과 반환.
 	static bool GetInterfaceIPAddress(int nIfIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Interface의 Subnet Mask 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [out] strvalue	Subnet Mask 확인.
+	/// \param bool				결과 반환.
 	static bool GetInterfaceSubnetMask(int nIfIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Interface의 Device 개수 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [out] nValue		Device 개수 확인.
+	/// \param bool				결과 반환.
 	static bool GetNumberOfDevices(int nIfIdx, int &nValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 Model Name 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [out] strValue	Device Model Name 확인.
+	/// \param bool				결과 반환.
 	static bool GetDeviceName(int nIfIdx, int nDvIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 Serial Number 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [out] strValue	Device Serial Number 확인.
+	/// \param bool				결과 반환.
 	static bool GetDeviceSerialNumber(int nIfIdx, int nDvIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 IP Address 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [out] strValue	Device IP Address 확인.
+	/// \param bool				결과 반환.
 	static bool GetDeviceIPAddress(int nIfIdx, int nDvIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 MAC Address 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [out] strValue	Device MAC Address 확인.
+	/// \param bool				결과 반환.
 	static bool GetDeviceMACAddress(int nIfIdx, int nDvIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 Access Status 확인 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [out] strValue	Device Access Status 확인.
+	/// \param bool				결과 반환.
 	static bool GetDeviceAccessStatus(int nIfIdx, int nDvIdx, CString &strValue);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 IP 구성이 올바른지 확인하는 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [out] bValid		유효 여부 확인.
+	/// \param bool				결과 반환.
 	static bool GetDeviceIPConfigurationValid(int nIfIdx, int nDvIdx, bool &bValid);
+	//******************************************************************************************************************
+	/// \brief					특정 Device의 IP Address 설정 함수.
+	/// \param [in] nIfIdx		Interface Index.
+	/// \param [in] nDvIdx		Device Index.
+	/// \param [in] strValue	Device IP Address 설정 값 입력.
+	/// \param bool				결과 반환.
 	static bool SetDeviceIPAddress(int nIfIdx, int nDvIdx, CString strValue);
 
 public :
 	//----- 연결 및 해제 -----//
-	bool OnConnect(); // Dialog 선택 연결.
-	bool OnConnectID(CString strUserID); // User ID로 연결.
-	bool OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4); // IP Address로 연결.
+	bool OnConnect();
+	bool OnConnectID(CString strUserID);
+	bool OnConnectIP(int nAddr1, int nAddr2, int nAddr3, int nAddr4);
 	bool OnConnectIP(CString strIPAddress);
-	void OnDisconnect(); // 연결 해제.
+	void OnDisconnect();
 
 	//----- 영상 취득 제어 -----//
 	bool OnStartAcquisition(); // 영상 취득 시작.
@@ -70,6 +132,8 @@ public :
 	bool SetSoftTriggerMode();	// 소프트웨어 트리거 설정.
 	bool SetHardTriggerMode();  // 하드웨어 트리거 설정.
 	bool OnTriggerEvent();		// 소프트웨어 트리거 이벤트.
+	bool SetAcquisitionMode(ACQMODE Mode);
+	bool SetMultiFrameCount(int nValue);
 
 	//----- 영상 저장-----//
 	bool OnSaveImage(CString strPath);	// 이미지 저장.

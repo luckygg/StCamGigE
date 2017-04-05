@@ -1085,26 +1085,17 @@ bool CStCamGigE::SetOffsetX(int nValue)
 
 bool CStCamGigE::SetOffsetY(int nValue)
 {
-	bool ret = SetValueInt("OffsetY",nValue);
-	if (ret == false) return false;
-
-	return true;
+	return SetValueInt("OffsetY",nValue);
 }
 
 bool CStCamGigE::SetAcquisitionFrameRate(double dValue)
 {
-	bool ret = SetValueDouble("AcquisitionFrameRate",dValue);
-	if (ret == false) return false;
-
-	return true;
+	return SetValueDouble("AcquisitionFrameRate",dValue);
 }
 
 bool CStCamGigE::SetAcquisitionMode(CString strValue)
 {
-	bool ret = SetValueEnum("AcquisitionMode",strValue);
-	if (ret == false) return false;
-
-	return true;
+	return SetValueEnum("AcquisitionMode",strValue);
 }
 
 bool CStCamGigE::SetTriggerMode(TRGMODE Mode)
@@ -1204,6 +1195,33 @@ bool CStCamGigE::SetContinuousMode()
 	return true;
 }
 
+bool CStCamGigE::SetAcquisitionMode(ACQMODE Mode)
+{
+	bool ret=false;
+
+	switch (Mode)
+	{
+	case ACQ_CNT :
+		ret = SetValueEnum("AcquisitionMode", _T("Continuous"));
+		break;
+	case ACQ_SINGLE :
+		ret = SetValueEnum("AcquisitionMode", _T("SingleFrame"));
+		break;
+	case ACQ_MULTI :
+		ret = SetValueEnum("AcquisitionMode", _T("MultiFrame"));
+		break;
+	}
+
+	if (ret == false) return false;
+
+	return true;
+}
+
+bool CStCamGigE::SetMultiFrameCount(int nValue)
+{
+	return SetValueInt("AcquisitionFrameCount", nValue);
+}
+
 bool CStCamGigE::SetSoftTriggerMode()
 {
 	bool ret=false;
@@ -1241,22 +1259,12 @@ bool CStCamGigE::SetHardTriggerMode()
 
 bool CStCamGigE::OnTriggerEvent()
 {
-	bool ret=false;
-
-	ret = OnExecuteCommand("TriggerSoftware");
-	if (ret == false) return false;
-
-	return true;
+	return OnExecuteCommand("TriggerSoftware");
 }
 
 bool CStCamGigE::OnUserSetLoad()
 {
-	bool ret=false;
-
-	ret = OnExecuteCommand("UserSetLoad");
-	if (ret == false) return false;
-
-	return true;
+	return OnExecuteCommand("UserSetLoad");
 }
 
 bool CStCamGigE::OnAutoWhiteBalance(AWB Type)
@@ -1345,12 +1353,7 @@ bool CStCamGigE::OnSaveAWBValueOnceToPreset(int nPresetNum)
 
 bool CStCamGigE::OnUserSetSave()
 {
-	bool ret=false;
-
-	ret = OnExecuteCommand("UserSetSave");
-	if (ret == false) return false;
-
-	return true;
+	return OnExecuteCommand("UserSetSave");
 }
 
 UINT CStCamGigE::BufferThread(LPVOID param)
