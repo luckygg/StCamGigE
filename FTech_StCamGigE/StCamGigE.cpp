@@ -909,7 +909,7 @@ bool CStCamGigE::OnSaveImage(CString strPath)
 	return true;
 }
 
-bool CStCamGigE::GetDeviceUserID(CString &strValue)
+bool CStCamGigE::GetUserID(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueString("DeviceUserID",value);
@@ -920,7 +920,7 @@ bool CStCamGigE::GetDeviceUserID(CString &strValue)
 	return true;
 }
 
-bool CStCamGigE::GetDeviceModelName(CString &strValue)
+bool CStCamGigE::GetModelName(CString &strValue)
 {
 	CString value=_T("");
 	bool ret = GetValueString("DeviceModelName",value);

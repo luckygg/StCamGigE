@@ -117,7 +117,7 @@ void CFTech_StCamGigEDlg::OnBnClickedBtnConnection()
 	CString caption=L"";
 	GetDlgItemText(IDC_BTN_CONNECTION,caption);
 
-	CStCamGigE::SetDeviceIPAddress(2,0,_T("192.100.101.11"));
+	
 	if (caption == L"Connect")
 	{
 		if (m_Camera.IsConnected() == true) return;
@@ -127,14 +127,14 @@ void CFTech_StCamGigEDlg::OnBnClickedBtnConnection()
 		{
 			m_nWidth  = m_Camera.GetWidth();
 			m_nHeight = m_Camera.GetHeight();
-			m_nBpp	  = m_Camera.GetBPP();
+			m_nBpp	  = m_Camera.GetBpp();
 
 			m_pBuffer = new BYTE[m_nWidth*m_nHeight*m_nBpp/8];
 			memset(m_pBuffer, 0, m_nWidth*m_nHeight*m_nBpp/8);
 
 			CreateBmpInfo(m_nWidth, m_nHeight ,m_nBpp);
 			CString model=L"";
-			m_Camera.GetDeviceModelName(model);
+			m_Camera.GetModelName(model);
 			SetDlgItemText(IDC_LB_MODEL,model);
 			GetDlgItem(IDC_BTN_ACQ)->EnableWindow(TRUE);
 			SetDlgItemText(IDC_BTN_ACQ, L"Start");
