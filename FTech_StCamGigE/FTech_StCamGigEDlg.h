@@ -49,4 +49,6 @@ public:
 	afx_msg void OnBnClickedRbtnSoft();
 	afx_msg void OnBnClickedRbtnHard();
 	afx_msg void OnBnClickedBtnEvent();
+	afx_msg void OnBnClickedRBtnConnection(UINT ID);
+	int m_nRBtnConnection;
 };

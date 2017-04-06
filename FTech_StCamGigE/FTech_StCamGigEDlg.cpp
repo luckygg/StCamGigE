@@ -31,6 +31,7 @@ UINT DisplayThread(LPVOID param)
 // CFTech_StCamGigEDlg dialog
 CFTech_StCamGigEDlg::CFTech_StCamGigEDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CFTech_StCamGigEDlg::IDD, pParent)
+	, m_nRBtnConnection(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_pThDsp	  = NULL;
@@ -44,6 +45,7 @@ CFTech_StCamGigEDlg::CFTech_StCamGigEDlg(CWnd* pParent /*=NULL*/)
 void CFTech_StCamGigEDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Radio(pDX, IDC_RBTN_AUTO, m_nRBtnConnection);
 }
 
 BEGIN_MESSAGE_MAP(CFTech_StCamGigEDlg, CDialogEx)
@@ -58,6 +60,7 @@ BEGIN_MESSAGE_MAP(CFTech_StCamGigEDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_RBTN_SOFT, &CFTech_StCamGigEDlg::OnBnClickedRbtnSoft)
 	ON_BN_CLICKED(IDC_RBTN_HARD, &CFTech_StCamGigEDlg::OnBnClickedRbtnHard)
 	ON_BN_CLICKED(IDC_BTN_EVENT, &CFTech_StCamGigEDlg::OnBnClickedBtnEvent)
+	ON_CONTROL_RANGE(BN_CLICKED, IDC_RBTN_AUTO, IDC_RBTN_WND, OnBnClickedRBtnConnection)
 END_MESSAGE_MAP()
 
 // CFTech_StCamGigEDlg message handlers
@@ -72,6 +75,7 @@ BOOL CFTech_StCamGigEDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	CheckDlgButton(IDC_RBTN_CONT, 1);
+	CheckDlgButton(IDC_RBTN_AUTO, 1);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -117,12 +121,65 @@ void CFTech_StCamGigEDlg::OnBnClickedBtnConnection()
 	CString caption=L"";
 	GetDlgItemText(IDC_BTN_CONNECTION,caption);
 
-	
 	if (caption == L"Connect")
 	{
 		if (m_Camera.IsConnected() == true) return;
 
-		bool ret = m_Camera.OnConnect();
+		bool ret=false;
+		if (m_nRBtnConnection == 0)
+		{
+			bool bBreak=false;
+			
+			int nIf=0;
+
+			CStCamGigE::GetNumberOfInterfaces(nIf);
+			for (int i=0; i<nIf; i++)
+			{
+				if (bBreak == true) break;
+
+				int nDv=0;
+				CStCamGigE::GetNumberOfDevices(i,nDv);
+				for (int j=0; j<nDv; j++)
+				{
+					if (bBreak == true) break;
+
+					bool bValid=false;
+					CStCamGigE::GetDeviceIPConfigurationValid(i,j,bValid);
+					if (bValid == false)
+					{
+						CString strIfIP=_T(""),strIfSub=_T(""),strTmp=_T(""), strIP=_T("");
+						CStCamGigE::GetInterfaceIPAddress(i,strIfIP);
+						int nLen = strIfIP.GetLength();
+						int nPos = strIfIP.ReverseFind('.');
+						int nLast = _ttoi(strIfIP.Mid(nPos+1,nLen-nPos));
+
+						strTmp = strIfIP.Left(nLen-3);
+						nLast++;
+						strIP.Format(_T("%s.%d"),strTmp,nLast);
+						CStCamGigE::SetDeviceIPAddress(i,j,strIP);
+
+						ret = m_Camera.OnConnectIP(strIP);
+
+						if (ret == true)
+							bBreak = true;
+					}
+					else
+					{
+						CString strIP=_T("");
+						CStCamGigE::GetDeviceIPAddress(i,j,strIP);
+
+						ret = m_Camera.OnConnectIP(strIP);
+						if (ret == true)
+							bBreak = true;
+					}
+				}
+			}
+		}
+		else
+		{
+			ret = m_Camera.OnConnect();
+		} 
+
 		if (ret == true)
 		{
 			m_nWidth  = m_Camera.GetWidth();
@@ -324,6 +381,11 @@ void CFTech_StCamGigEDlg::OnTimer(UINT_PTR nIDEvent)
 	}
 
 	CDialogEx::OnTimer(nIDEvent);
+}
+
+void CFTech_StCamGigEDlg::OnBnClickedRBtnConnection(UINT ID)
+{
+	UpdateData(TRUE);
 }
 
 void CFTech_StCamGigEDlg::OnBnClickedRbtnCont()
